@@ -1,0 +1,100 @@
+﻿@page "/menus/edit"
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Domain
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Menu</h2>
+<hr />
+@if (Menu is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Menu" OnValidSubmit="UpdateMenu" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="Menu.MenuId" value="@Menu.MenuId" />
+                <div class="mb-3">
+                <span class="text-danger">*</span>
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="Menu.Name" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => Menu.Name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Price:</label>
+                    <InputNumber id="price" @bind-Value="Menu.Price" class="form-control" />
+                    <ValidationMessage For="() => Menu.Price" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="restaurantid" class="form-label">RestaurantId:</label>
+                    <InputNumber id="restaurantid" @bind-Value="Menu.RestaurantId" class="form-control" />
+                    <ValidationMessage For="() => Menu.RestaurantId" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/menus">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int MenuId { get; set; }
+
+    [SupplyParameterFromForm]
+    private Menu? Menu { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Menu ??= await context.Menu.FirstOrDefaultAsync(m => m.MenuId == MenuId);
+
+        if (Menu is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateMenu()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Menu!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!MenuExists(Menu!.MenuId))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/menus");
+    }
+
+    private bool MenuExists(int menuid)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Menu.Any(e => e.MenuId == menuid);
+    }
+}

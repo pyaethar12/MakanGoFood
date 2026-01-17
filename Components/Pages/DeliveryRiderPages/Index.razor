@@ -1,0 +1,43 @@
+﻿@page "/deliveryriders"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MakanGoFood.Domain
+@using MakanGoFood.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@attribute [Authorize(Roles = "Rider,Admin")]
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="deliveryriders/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.DeliveryRider">
+    <PropertyColumn Property="deliveryrider => deliveryrider.Name" />
+    <PropertyColumn Property="deliveryrider => deliveryrider.Phone" />
+    <PropertyColumn Property="deliveryrider => deliveryrider.VehicleNo" />
+
+    <TemplateColumn Context="deliveryrider">
+        <a href="@($"deliveryriders/edit?riderid={deliveryrider.RiderId}")">Edit</a> |
+        <a href="@($"deliveryriders/details?riderid={deliveryrider.RiderId}")">Details</a> |
+
+        <AuthorizeView Roles="Admin">
+        <a href="@($"deliveryriders/delete?riderid={deliveryrider.RiderId}")">Delete</a>
+        </AuthorizeView>
+
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private MakanGoFoodContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

@@ -1,0 +1,50 @@
+﻿@page "/menus/details"
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Domain
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>Menu</h2>
+    <hr />
+    @if (menu is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@menu.Name</dd>
+            <dt class="col-sm-2">Price</dt>
+            <dd class="col-sm-10">@menu.Price</dd>
+            <dt class="col-sm-2">RestaurantId</dt>
+            <dd class="col-sm-10">@menu.RestaurantId</dd>
+        </dl>
+        <div>
+            <a href="@($"/menus/edit?menuid={menu.MenuId}")">Edit</a> |
+            <a href="@($"/menus")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Menu? menu;
+
+    [SupplyParameterFromQuery]
+    private int MenuId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        menu = await context.Menu.FirstOrDefaultAsync(m => m.MenuId == MenuId);
+
+        if (menu is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

@@ -1,0 +1,40 @@
+﻿@page "/addresses"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MakanGoFood.Domain
+@using MakanGoFood.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@attribute [Authorize(Roles = "Customer")]
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="addresses/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Address">
+    <PropertyColumn Property="address => address.Street" />
+    <PropertyColumn Property="address => address.City" />
+    <PropertyColumn Property="address => address.PostalCode" />
+    <PropertyColumn Property="address => address.CustomerId" />
+
+    <TemplateColumn Context="address">
+        <a href="@($"addresses/edit?addressid={address.AddressId}")">Edit</a> |
+        <a href="@($"addresses/details?addressid={address.AddressId}")">Details</a> |
+        <a href="@($"addresses/delete?addressid={address.AddressId}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private MakanGoFoodContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

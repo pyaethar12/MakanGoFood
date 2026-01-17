@@ -1,0 +1,101 @@
+﻿@page "/deliveryriders/edit"
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Domain
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>DeliveryRider</h2>
+<hr />
+@if (DeliveryRider is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="DeliveryRider" OnValidSubmit="UpdateDeliveryRider" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="DeliveryRider.RiderId" value="@DeliveryRider.RiderId" />
+                <div class="mb-3">
+                <span class="text-danger">*</span>
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="DeliveryRider.Name" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => DeliveryRider.Name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                <span class="text-danger">*</span>
+                    <label for="phone" class="form-label">Phone:</label>
+                    <InputText id="phone" @bind-Value="DeliveryRider.Phone" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => DeliveryRider.Phone" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="vehicleno" class="form-label">VehicleNo:</label>
+                    <InputText id="vehicleno" @bind-Value="DeliveryRider.VehicleNo" class="form-control" />
+                    <ValidationMessage For="() => DeliveryRider.VehicleNo" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/deliveryriders">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int RiderId { get; set; }
+
+    [SupplyParameterFromForm]
+    private DeliveryRider? DeliveryRider { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        DeliveryRider ??= await context.DeliveryRider.FirstOrDefaultAsync(m => m.RiderId == RiderId);
+
+        if (DeliveryRider is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateDeliveryRider()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(DeliveryRider!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!DeliveryRiderExists(DeliveryRider!.RiderId))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/deliveryriders");
+    }
+
+    private bool DeliveryRiderExists(int riderid)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.DeliveryRider.Any(e => e.RiderId == riderid);
+    }
+}

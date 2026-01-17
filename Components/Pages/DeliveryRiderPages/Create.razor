@@ -1,0 +1,56 @@
+﻿@page "/deliveryriders/create"
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Domain
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>DeliveryRider</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="DeliveryRider" OnValidSubmit="AddDeliveryRider" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <span class="text-danger">*</span>
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="DeliveryRider.Name" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => DeliveryRider.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <span class="text-danger">*</span>
+                <label for="phone" class="form-label">Phone:</label> 
+                <InputText id="phone" @bind-Value="DeliveryRider.Phone" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => DeliveryRider.Phone" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="vehicleno" class="form-label">VehicleNo:</label> 
+                <InputText id="vehicleno" @bind-Value="DeliveryRider.VehicleNo" class="form-control" /> 
+                <ValidationMessage For="() => DeliveryRider.VehicleNo" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/deliveryriders">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private DeliveryRider DeliveryRider { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddDeliveryRider()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.DeliveryRider.Add(DeliveryRider);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/deliveryriders");
+    }
+}

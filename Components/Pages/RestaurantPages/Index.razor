@@ -1,0 +1,47 @@
+﻿@page "/restaurants"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MakanGoFood.Domain
+@using MakanGoFood.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Customer,Admin")]
+
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+<AuthorizeView Roles="Admin">
+<p>
+    <a href="restaurants/create">Create New</a>
+</p>
+</AuthorizeView>
+
+<QuickGrid Class="table" Items="context.Restaurant">
+    <PropertyColumn Property="restaurant => restaurant.Name" />
+    <PropertyColumn Property="restaurant => restaurant.Location" />
+    <PropertyColumn Property="restaurant => restaurant.OpeningHours" />
+    <PropertyColumn Property="restaurant => restaurant.Rating" />
+
+    <TemplateColumn Context="restaurant">
+        <a href="@($"restaurants/edit?restaurantid={restaurant.RestaurantId}")">Edit</a> |
+        <a href="@($"restaurants/details?restaurantid={restaurant.RestaurantId}")">Details</a> 
+
+        <AuthorizeView Roles ="Administrator">
+            | <a href="@($"restaurants/delete?restaurantid={restaurant.RestaurantId}")">Delete</a>
+        </AuthorizeView>
+
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private MakanGoFoodContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
