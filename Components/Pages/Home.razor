@@ -1,7 +1,197 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<PageTitle>MakanGoFood</PageTitle>
 
-Welcome to your new app.
+<div class="container py-4">
+
+    <!-- HERO -->
+    <div class="p-4 p-md-5 mb-4 rounded-3 border bg-light">
+        <div class="row align-items-center g-3">
+            <div class="col-md-7">
+                <h1 class="display-6 fw-bold mb-2">Fast food delivery, made simple 🍜🚴</h1>
+                <p class="lead mb-3">
+                    Browse restaurants, add to cart, pay securely, and track your order in real time.
+                </p>
+
+                <AuthorizeView>
+                    <Authorized Context="auth">
+                        @if (auth.User.IsInRole("Customer"))
+                        {
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" @onclick="GoRestaurants">Order Now</button>
+                                <button class="btn btn-outline-secondary" @onclick="GoMyOrders">My Orders</button>
+                            </div>
+                        }
+                        else if (auth.User.IsInRole("Rider"))
+                        {
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" @onclick="GoRiderOrders">View Available Orders</button>
+                                <button class="btn btn-outline-secondary" @onclick="GoRiderProfile">My Rider Profile</button>
+                            </div>
+                        }
+                        else if (auth.User.IsInRole("Admin"))
+                        {
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" @onclick="GoRestaurants">Manage Restaurants</button>
+                                <button class="btn btn-outline-secondary" @onclick="GoCustomers">View Customers</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" @onclick="GoRestaurants">Browse Restaurants</button>
+                            </div>
+                        }
+                    </Authorized>
+
+                    <NotAuthorized>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-primary" @onclick="GoRegister">Create Account</button>
+                            <button class="btn btn-outline-secondary" @onclick="GoLogin">Login</button>
+                            <button class="btn btn-outline-dark" @onclick="GoRestaurants">Browse Restaurants</button>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-2">Find food near you</h5>
+                        <div class="input-group">
+                            <input class="form-control"
+                                   placeholder="Search restaurant or cuisine..."
+                                   @bind="search"
+                                   @bind:event="oninput" />
+                            <button class="btn btn-dark" @onclick="GoSearch">Search</button>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Tip: try “Thai”, “Bubble tea”, or “Chicken rice”.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUISINES -->
+    <h4 class="mb-3">Popular cuisines</h4>
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+        @foreach (var c in cuisines)
+        {
+            <div class="col">
+                <button class="btn btn-outline-primary w-100 py-3"
+                        @onclick="() => GoCuisine(c)">
+                    @c
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- FEATURED RESTAURANTS -->
+    <h4 class="mb-3">Featured restaurants</h4>
+    <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+        @foreach (var r in featured)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@r.Name</h5>
+                        <p class="card-text text-muted mb-1">@r.Location</p>
+                        <p class="card-text mb-2">⭐ @r.Rating</p>
+
+                        <button class="btn btn-sm btn-primary"
+                                @onclick="() => GoRestaurantMenu(r.Id)">
+                            View Menu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <h4 class="mb-3">How it works</h4>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold">1) Choose food</h6>
+                    <p class="text-muted mb-0">Browse restaurants and add items to your cart.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold">2) Pay & confirm</h6>
+                    <p class="text-muted mb-0">Pay online (or cash on delivery) and confirm your order.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold">3) Track delivery</h6>
+                    <p class="text-muted mb-0">Rider accepts, picks up, and delivers to your address.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private string? search;
+
+    private readonly string[] cuisines =
+    {
+        "Chinese", "Thai", "Burmese", "Western",
+        "Fast Food", "Korean", "Japanese", "Drinks"
+    };
+
+    private readonly List<FeaturedRestaurant> featured =
+    [
+        new FeaturedRestaurant { Id = 1, Name = "Golden Dragon", Location = "Tampines", Rating = "4.6" },
+        new FeaturedRestaurant { Id = 2, Name = "Bangkok Bites", Location = "Bedok", Rating = "4.5" },
+        new FeaturedRestaurant { Id = 8, Name = "Tea & Chill", Location = "Paya Lebar", Rating = "4.7" }
+    ];
+
+    // Navigation helpers
+    private void GoRestaurants() => Nav.NavigateTo("/restaurants");
+    private void GoMyOrders() => Nav.NavigateTo("/myorders");
+    private void GoRiderOrders() => Nav.NavigateTo("/orders");
+    private void GoRiderProfile() => Nav.NavigateTo("/deliveryriders");
+    private void GoCustomers() => Nav.NavigateTo("/customers");
+    private void GoLogin() => Nav.NavigateTo("/Account/Login");
+    private void GoRegister() => Nav.NavigateTo("/Account/Register");
+
+    private void GoSearch()
+    {
+        var q = string.IsNullOrWhiteSpace(search) ? null : Uri.EscapeDataString(search.Trim());
+        Nav.NavigateTo(string.IsNullOrWhiteSpace(q) ? "/restaurants" : $"/restaurants?search={q}");
+    }
+
+    private void GoCuisine(string cuisine)
+    {
+        var c = Uri.EscapeDataString(cuisine.Trim());
+        Nav.NavigateTo($"/restaurants?cuisine={c}", forceLoad: true);
+    }
+
+    private void GoRestaurantMenu(int restaurantId)
+    {
+        Nav.NavigateTo($"/menus/{restaurantId}");
+    }
+
+    private class FeaturedRestaurant
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string Rating { get; set; } = "";
+    }
+}

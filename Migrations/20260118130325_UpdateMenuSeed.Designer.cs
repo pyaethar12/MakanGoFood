@@ -4,6 +4,7 @@ using MakanGoFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MakanGoFood.Migrations
 {
     [DbContext(typeof(MakanGoFoodContext))]
-    partial class MakanGoFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20260118130325_UpdateMenuSeed")]
+    partial class UpdateMenuSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace MakanGoFood.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "65de166d-17ce-4c0f-ae36-477a31a2def8",
+                            ConcurrencyStamp = "95728ebb-86a2-46ea-a83b-4b01be2d269c",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -105,9 +108,9 @@ namespace MakanGoFood.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAELDc56PBb3v/CBewgrF1lA3JeaeWCwo54lszDFbvlQZljfSZEGwNr/j6N2ObgY/xpg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOJ5oSlaKEazhLf6GjGNUCkdzxw2Chpjvurh46WkTbndCF5K7JSENeWkCcmErhyPQQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2d6d057e-9b50-4ab9-84ae-9b7f96c2b39f",
+                            SecurityStamp = "63e6e8b1-fa07-4e24-acd7-aea405029419",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -510,13 +513,6 @@ namespace MakanGoFood.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RestaurantId"));
 
-                    b.Property<string>("Cuisine")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -530,7 +526,7 @@ namespace MakanGoFood.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Rating")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(3,2)");
 
                     b.HasKey("RestaurantId");
 
@@ -540,8 +536,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 1,
-                            Cuisine = "Chinese",
-                            ImageUrl = "/images/restaurants/golden-dragon.jpg",
                             Location = "Tampines",
                             Name = "Golden Dragon",
                             OpeningHours = "10:00 AM - 10:00 PM",
@@ -550,72 +544,58 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 2,
-                            Cuisine = "Thai",
-                            ImageUrl = "/images/restaurants/bangkok-bites.jpeg",
                             Location = "Bedok",
                             Name = "Bangkok Bites",
                             OpeningHours = "11:00 AM - 9:00 PM",
-                            Rating = 4.40m
+                            Rating = 4.20m
                         },
                         new
                         {
                             RestaurantId = 3,
-                            Cuisine = "Burmese",
-                            ImageUrl = "/images/restaurants/yangon-delight.webp",
-                            Location = "Yishun",
-                            Name = "Yangon Kitchen",
-                            OpeningHours = "9:00 AM - 8:00 PM",
+                            Location = "Paya Lebar",
+                            Name = "Yangon Delights",
+                            OpeningHours = "10:30 AM - 9:30 PM",
                             Rating = 4.30m
                         },
                         new
                         {
                             RestaurantId = 4,
-                            Cuisine = "Western",
-                            ImageUrl = "/images/restaurants/steak-grill.jpg",
-                            Location = "Jurong",
-                            Name = "Steak & Grill",
-                            OpeningHours = "12:00 PM - 11:00 PM",
-                            Rating = 4.60m
+                            Location = "Jurong East",
+                            Name = "Westside Grill",
+                            OpeningHours = "12:00 PM - 10:00 PM",
+                            Rating = 4.10m
                         },
                         new
                         {
                             RestaurantId = 5,
-                            Cuisine = "Fast Food",
-                            ImageUrl = "/images/restaurants/burger-hub.jpg",
                             Location = "Woodlands",
-                            Name = "Burger Hub",
-                            OpeningHours = "10:00 AM - 12:00 AM",
-                            Rating = 4.20m
+                            Name = "Burger Blast",
+                            OpeningHours = "10:00 AM - 11:00 PM",
+                            Rating = 4.00m
                         },
                         new
                         {
                             RestaurantId = 6,
-                            Cuisine = "Korean",
-                            ImageUrl = "/images/restaurants/seoul-bbq.jpg",
-                            Location = "City Hall",
-                            Name = "Seoul BBQ",
+                            Location = "Clementi",
+                            Name = "Seoul Kitchen",
                             OpeningHours = "11:00 AM - 10:00 PM",
-                            Rating = 4.70m
+                            Rating = 4.40m
                         },
                         new
                         {
                             RestaurantId = 7,
-                            Cuisine = "Japanese",
-                            ImageUrl = "/images/restaurants/sakura-sushi.jpg",
-                            Location = "Bishan",
+                            Location = "Bugis",
                             Name = "Sakura Sushi",
-                            OpeningHours = "11:00 AM - 9:30 PM",
+                            OpeningHours = "11:30 AM - 9:30 PM",
                             Rating = 4.60m
                         },
                         new
                         {
                             RestaurantId = 8,
-                            Cuisine = "Drinks",
-                            ImageUrl = "/images/restaurants/tea-chill.jpeg",
-                            Location = "Paya Lebar",
+                            Location = "Serangoon",
                             Name = "Tea & Chill",
-                            OpeningHours = "10:00 AM - 11:00 PM",
-                            Rating = 4.80m
+                            OpeningHours = "10:00 AM - 10:30 PM",
+                            Rating = 4.70m
                         });
                 });
 

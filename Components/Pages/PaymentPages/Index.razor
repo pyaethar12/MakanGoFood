@@ -1,40 +1,99 @@
-﻿@page "/payments"
+﻿@page "/payment/{OrderId:int}"
+@using Microsoft.AspNetCore.Components
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using MakanGoFood.Domain
 @using MakanGoFood.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
-@attribute [Authorize(Roles = "Customer")]
 
-<PageTitle>Index</PageTitle>
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+@inject NavigationManager Nav
 
-<h1>Index</h1>
+@rendermode InteractiveServer
 
-<p>
-    <a href="payments/create">Create New</a>
-</p>
+<h3>Payment</h3>
 
-<QuickGrid Class="table" Items="context.Payment">
-    <PropertyColumn Property="payment => payment.PaymentMethod" />
-    <PropertyColumn Property="payment => payment.PaymentStatus" />
-    <PropertyColumn Property="payment => payment.Amount" />
-    <PropertyColumn Property="payment => payment.OrderId" />
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (order is null)
+{
+    <div class="alert alert-danger">Order not found.</div>
+    <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/myorders")'>Back</button>
+}
+else
+{
+    <div class="card p-3">
+        <p><b>Order ID:</b> @order.OrderId</p>
+        <p><b>Total:</b> @order.OrderTotal.ToString("0.00")</p>
+        <p><b>Order Status:</b> @order.OrderStatus</p>
 
-    <TemplateColumn Context="payment">
-        <a href="@($"payments/edit?paymentid={payment.PaymentId}")">Edit</a> |
-        <a href="@($"payments/details?paymentid={payment.PaymentId}")">Details</a> |
-        <a href="@($"payments/delete?paymentid={payment.PaymentId}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+        @if (payment is null)
+        {
+            <div class="alert alert-warning">No payment record found for this order.</div>
+            <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/myorders")'>Back</button>
+        }
+        else
+        {
+            <p><b>Payment Method:</b> @payment.PaymentMethod</p>
+            <p><b>Payment Status:</b> @payment.PaymentStatus</p>
+
+            @if (payment.PaymentStatus != "Paid")
+            {
+                <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-success" @onclick="PayNow">Pay Now (Simulate)</button>
+                    <button class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/myorders")'>Pay Later</button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success mt-2">
+                    Payment completed ✅ Transaction: @payment.TransactionRef
+                </div>
+                <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/myorders")'>Go to My Orders</button>
+            }
+        }
+    </div>
+}
 
 @code {
-    private MakanGoFoodContext context = default!;
+    [Parameter] public int OrderId { get; set; }
 
-    protected override void OnInitialized()
+    private bool loading = true;
+    private Order? order;
+    private Payment? payment;
+
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
+        await Load();
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    private async Task Load()
+    {
+        loading = true;
+        using var db = DbFactory.CreateDbContext();
+
+        order = await db.Order.AsNoTracking().FirstOrDefaultAsync(o => o.OrderId == OrderId);
+        payment = await db.Payment.AsNoTracking().FirstOrDefaultAsync(p => p.OrderId == OrderId);
+
+        loading = false;
+    }
+
+    private async Task PayNow()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var o = await db.Order.FirstOrDefaultAsync(x => x.OrderId == OrderId);
+        var p = await db.Payment.FirstOrDefaultAsync(x => x.OrderId == OrderId);
+
+        if (o is null || p is null) return;
+
+        p.PaymentStatus = "Paid";
+        p.PaidAt = DateTime.UtcNow;
+        p.TransactionRef = $"SIM-{Guid.NewGuid():N}".Substring(0, 12);
+
+        o.OrderStatus = "Paid"; // or "Confirmed"
+
+        await db.SaveChangesAsync();
+        await Load();
+    }
 }

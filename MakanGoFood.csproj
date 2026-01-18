@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Folder Include="Components\Pages\AdminPages\" />
+    <Folder Include="wwwroot\images\restaurants\" />
   </ItemGroup>
 
 </Project>

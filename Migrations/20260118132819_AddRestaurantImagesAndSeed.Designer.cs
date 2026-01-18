@@ -4,6 +4,7 @@ using MakanGoFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MakanGoFood.Migrations
 {
     [DbContext(typeof(MakanGoFoodContext))]
-    partial class MakanGoFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20260118132819_AddRestaurantImagesAndSeed")]
+    partial class AddRestaurantImagesAndSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace MakanGoFood.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "65de166d-17ce-4c0f-ae36-477a31a2def8",
+                            ConcurrencyStamp = "13e154fc-755b-4671-8b46-b6da5fff3eb4",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -105,9 +108,9 @@ namespace MakanGoFood.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAELDc56PBb3v/CBewgrF1lA3JeaeWCwo54lszDFbvlQZljfSZEGwNr/j6N2ObgY/xpg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEHWhpTxYWoZEe97RHemAL3EI14KfqcGP2L7NCkxXo34CeXcugmUOTnU+ogsmHhv7WQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2d6d057e-9b50-4ab9-84ae-9b7f96c2b39f",
+                            SecurityStamp = "1b0d8b48-9b22-4ffb-8bdd-32ef42534bdb",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -510,10 +513,6 @@ namespace MakanGoFood.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RestaurantId"));
 
-                    b.Property<string>("Cuisine")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -540,8 +539,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 1,
-                            Cuisine = "Chinese",
-                            ImageUrl = "/images/restaurants/golden-dragon.jpg",
+                            ImageUrl = "images/restaurants/golden-dragon.jpg",
                             Location = "Tampines",
                             Name = "Golden Dragon",
                             OpeningHours = "10:00 AM - 10:00 PM",
@@ -550,8 +548,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 2,
-                            Cuisine = "Thai",
-                            ImageUrl = "/images/restaurants/bangkok-bites.jpeg",
+                            ImageUrl = "images/restaurants/bangkok-bites.jpeg",
                             Location = "Bedok",
                             Name = "Bangkok Bites",
                             OpeningHours = "11:00 AM - 9:00 PM",
@@ -560,8 +557,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 3,
-                            Cuisine = "Burmese",
-                            ImageUrl = "/images/restaurants/yangon-delight.webp",
+                            ImageUrl = "images/restaurants/yangon-delight.webp",
                             Location = "Yishun",
                             Name = "Yangon Kitchen",
                             OpeningHours = "9:00 AM - 8:00 PM",
@@ -570,8 +566,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 4,
-                            Cuisine = "Western",
-                            ImageUrl = "/images/restaurants/steak-grill.jpg",
+                            ImageUrl = "images/restaurants/steak-grill.jpg",
                             Location = "Jurong",
                             Name = "Steak & Grill",
                             OpeningHours = "12:00 PM - 11:00 PM",
@@ -580,8 +575,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 5,
-                            Cuisine = "Fast Food",
-                            ImageUrl = "/images/restaurants/burger-hub.jpg",
+                            ImageUrl = "images/restaurants/burger-hub.jpg",
                             Location = "Woodlands",
                             Name = "Burger Hub",
                             OpeningHours = "10:00 AM - 12:00 AM",
@@ -590,8 +584,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 6,
-                            Cuisine = "Korean",
-                            ImageUrl = "/images/restaurants/seoul-bbq.jpg",
+                            ImageUrl = "images/restaurants/seoul-bbq.jpg",
                             Location = "City Hall",
                             Name = "Seoul BBQ",
                             OpeningHours = "11:00 AM - 10:00 PM",
@@ -600,8 +593,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 7,
-                            Cuisine = "Japanese",
-                            ImageUrl = "/images/restaurants/sakura-sushi.jpg",
+                            ImageUrl = "images/restaurants/sakura-sushi.jpg",
                             Location = "Bishan",
                             Name = "Sakura Sushi",
                             OpeningHours = "11:00 AM - 9:30 PM",
@@ -610,8 +602,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 8,
-                            Cuisine = "Drinks",
-                            ImageUrl = "/images/restaurants/tea-chill.jpeg",
+                            ImageUrl = "images/restaurants/tea-chill.jpg",
                             Location = "Paya Lebar",
                             Name = "Tea & Chill",
                             OpeningHours = "10:00 AM - 11:00 PM",

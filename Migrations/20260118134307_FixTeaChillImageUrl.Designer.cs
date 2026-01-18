@@ -4,6 +4,7 @@ using MakanGoFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MakanGoFood.Migrations
 {
     [DbContext(typeof(MakanGoFoodContext))]
-    partial class MakanGoFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20260118134307_FixTeaChillImageUrl")]
+    partial class FixTeaChillImageUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace MakanGoFood.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "65de166d-17ce-4c0f-ae36-477a31a2def8",
+                            ConcurrencyStamp = "b8d6f678-26da-4301-a8aa-ec61f8cec0a1",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -105,9 +108,9 @@ namespace MakanGoFood.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAELDc56PBb3v/CBewgrF1lA3JeaeWCwo54lszDFbvlQZljfSZEGwNr/j6N2ObgY/xpg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKn/Aj1ntw5RyER8PkBl9gjVpdCSi7Zj3pfuqaqE9tPFcpQ0vGl5AppjzQ4t8yU/Dg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2d6d057e-9b50-4ab9-84ae-9b7f96c2b39f",
+                            SecurityStamp = "1f3055d9-c094-4f0a-985f-5398d4be0e29",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -510,10 +513,6 @@ namespace MakanGoFood.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RestaurantId"));
 
-                    b.Property<string>("Cuisine")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -540,7 +539,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 1,
-                            Cuisine = "Chinese",
                             ImageUrl = "/images/restaurants/golden-dragon.jpg",
                             Location = "Tampines",
                             Name = "Golden Dragon",
@@ -550,7 +548,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 2,
-                            Cuisine = "Thai",
                             ImageUrl = "/images/restaurants/bangkok-bites.jpeg",
                             Location = "Bedok",
                             Name = "Bangkok Bites",
@@ -560,7 +557,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 3,
-                            Cuisine = "Burmese",
                             ImageUrl = "/images/restaurants/yangon-delight.webp",
                             Location = "Yishun",
                             Name = "Yangon Kitchen",
@@ -570,7 +566,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 4,
-                            Cuisine = "Western",
                             ImageUrl = "/images/restaurants/steak-grill.jpg",
                             Location = "Jurong",
                             Name = "Steak & Grill",
@@ -580,7 +575,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 5,
-                            Cuisine = "Fast Food",
                             ImageUrl = "/images/restaurants/burger-hub.jpg",
                             Location = "Woodlands",
                             Name = "Burger Hub",
@@ -590,7 +584,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 6,
-                            Cuisine = "Korean",
                             ImageUrl = "/images/restaurants/seoul-bbq.jpg",
                             Location = "City Hall",
                             Name = "Seoul BBQ",
@@ -600,7 +593,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 7,
-                            Cuisine = "Japanese",
                             ImageUrl = "/images/restaurants/sakura-sushi.jpg",
                             Location = "Bishan",
                             Name = "Sakura Sushi",
@@ -610,7 +602,6 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 8,
-                            Cuisine = "Drinks",
                             ImageUrl = "/images/restaurants/tea-chill.jpeg",
                             Location = "Paya Lebar",
                             Name = "Tea & Chill",

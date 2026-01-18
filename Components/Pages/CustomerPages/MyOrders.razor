@@ -7,19 +7,26 @@
 
 @inject IDbContextFactory<MakanGoFoodContext> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
 
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Customer")]
 
 <h1>My Orders</h1>
 
-<p><b>Logged in:</b> @emailDebug</p>
-<p><b>CustomerId:</b> @customerIdDebug</p>
-<p><b>Orders found:</b> @orders.Count</p>
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
 
-@if (orders.Count == 0)
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (orders.Count == 0)
 {
     <p>No orders yet.</p>
+    <NavLink class="btn btn-primary" href="/restaurants">Go to Restaurants</NavLink>
 }
 else
 {
@@ -29,9 +36,9 @@ else
                 <th>OrderId</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th>RestaurantName</th>
-                <th>AddressName</th>
-                
+                <th>Total</th>
+                <th>Payment</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -41,12 +48,21 @@ else
                     <td>@o.OrderId</td>
                     <td>@o.OrderDateTime</td>
                     <td>@o.OrderStatus</td>
-                    <td>@o.Restaurant?.Name</td>
-                    <td>@($"{o.Address?.Street}, {o.Address?.City} {o.Address?.PostalCode}")</td>
-                    <td>
-                        <NavLink class="btn btn-sm btn-primary" href="@($"/myorders/{o.OrderId}")">
+                    <td>@o.OrderTotal.ToString("0.00")</td>
+                    <td>@(o.Payment?.PaymentStatus ?? "No Payment")</td>
+                    <td class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick='() => Nav.NavigateTo($"/myorders/{o.OrderId}")'>
                             View
-                        </NavLink>
+                        </button>
+
+                        @if (o.Payment is not null && o.Payment.PaymentStatus != "Paid")
+                        {
+                            <button class="btn btn-sm btn-success"
+                                    @onclick='() => Nav.NavigateTo($"/payment/{o.OrderId}")'>
+                                Pay Now
+                            </button>
+                        }
                     </td>
                 </tr>
             }
@@ -55,38 +71,53 @@ else
 }
 
 @code {
+    private bool loading = true;
+    private string? error;
     private List<Order> orders = new();
-    private string emailDebug = "(none)";
-    private string customerIdDebug = "(none)";
 
     protected override async Task OnInitializedAsync()
     {
-        using var db = DbFactory.CreateDbContext();
-
-        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        var email = auth.User.Identity?.Name;
-
-        emailDebug = email ?? "(null)";
-
-        if (string.IsNullOrWhiteSpace(email))
-            return;
-
-        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
-
-        if (customer is null)
+        try
         {
-            customerIdDebug = "(null - no customer row)";
-            return;
+            using var db = DbFactory.CreateDbContext();
+
+            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+            var email = auth.User.Identity?.Name;
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                error = "Not logged in.";
+                return;
+            }
+
+            // Ensure customer exists (same as cart)
+            var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+            if (customer is null)
+            {
+                customer = new Customer
+                {
+                    Name = email,
+                    Email = email,
+                    Phone = ""
+                };
+                db.Customer.Add(customer);
+                await db.SaveChangesAsync();
+            }
+
+            orders = await db.Order
+                .Include(o => o.Payment)
+                .Where(o => o.CustomerId == customer.CustomerId)
+                .OrderByDescending(o => o.OrderDateTime)
+                .AsNoTracking()
+                .ToListAsync();
         }
-
-        customerIdDebug = customer.CustomerId.ToString();
-
-        orders = await db.Order
-            .Include(o => o.Restaurant)
-            .Include(o => o.Address)
-            .Where(o => o.CustomerId == customer.CustomerId)
-            .OrderByDescending(o => o.OrderDateTime)
-            .AsNoTracking()
-            .ToListAsync();
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 }

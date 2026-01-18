@@ -20,12 +20,6 @@
 {
     <div class="alert alert-danger">@error</div>
 }
-@if (!string.IsNullOrWhiteSpace(success))
-{
-    <div class="alert alert-success">@success</div>
-    <NavLink class="btn btn-primary mt-2" href="/myorders">Go to My Orders</NavLink>
-}
-
 
 @if (Cart.Items.Count == 0)
 {
@@ -54,7 +48,7 @@ else
                         <button class="btn btn-sm btn-outline-secondary" @onclick="() => Cart.Increase(i.MenuId)">+</button>
                     </td>
                     <td>@i.Price.ToString("0.00")</td>
-                    <td>@((i.Price * i.Quantity).ToString("0.00"))</td>
+                    <td>@( (i.Price * i.Quantity).ToString("0.00") )</td>
                 </tr>
             }
         </tbody>
@@ -66,9 +60,7 @@ else
 
     @if (addresses.Count == 0)
     {
-        <p class="text-muted">
-            No address found. Please add an address first.
-        </p>
+        <p class="text-muted">No address found. Please add an address first.</p>
         <NavLink class="btn btn-outline-primary" href="/addresses">Go to Address Page</NavLink>
     }
     else
@@ -93,56 +85,71 @@ else
     private List<Address> addresses = new();
     private int selectedAddressId = 0;
     private string? error;
-    private string? success;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAddresses();
+        try
+        {
+            await LoadAddresses();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
     }
+
 
     private async Task LoadAddresses()
     {
-        using var db = DbFactory.CreateDbContext();
-
-        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
-        var email = auth.User.Identity?.Name;
-
-        if (string.IsNullOrWhiteSpace(email))
-            return;
-
-        // Assumption: Customer.Email == Identity Email
-        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
-
-        // If customer row doesn't exist, create it automatically (so orders can work)
-        if (customer is null)
+        try
         {
-            customer = new Customer
-            {
-                Name = email,
-                Email = email,
-                Phone = ""
-            };
-            db.Customer.Add(customer);
-            await db.SaveChangesAsync();
-        }
+            using var db = DbFactory.CreateDbContext();
 
-        addresses = await db.Address
-            .Where(a => a.CustomerId == customer.CustomerId)
-            .AsNoTracking()
-            .ToListAsync();
+            var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+            var email = auth.User.Identity?.Name;
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                error = "Not logged in.";
+                return;
+            }
+
+            // Ensure customer exists
+            var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+            if (customer is null)
+            {
+                customer = new Customer
+                {
+                    Name = email,
+                    Email = email,
+                    Phone = ""
+                };
+                db.Customer.Add(customer);
+                await db.SaveChangesAsync();
+            }
+
+            addresses = await db.Address
+                .Where(a => a.CustomerId == customer.CustomerId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message; // show actual DB/auth error
+        }
     }
+
+
 
     private void ClearCart()
     {
         Cart.Clear();
         error = null;
-        success = "Cart cleared.";
     }
 
     private async Task PlaceOrder()
     {
         error = null;
-        success = null;
 
         if (Cart.Items.Count == 0)
         {
@@ -170,18 +177,10 @@ else
         var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
         if (customer is null)
         {
-            customer = new Customer
-            {
-                Name = email,
-                Email = email,
-                Phone = ""
-            };
-            db.Customer.Add(customer);
-            await db.SaveChangesAsync();
+            error = "Customer profile not found. Please register again.";
+            return;
         }
 
-
-        // Simple rule: 1 order = 1 restaurant (based on first cart item)
         var firstMenuId = Cart.Items[0].MenuId;
         var firstMenu = await db.Menu.FirstOrDefaultAsync(m => m.MenuId == firstMenuId);
         if (firstMenu is null)
@@ -194,6 +193,7 @@ else
         {
             OrderDateTime = DateTime.Now,
             OrderStatus = "Pending",
+            OrderTotal = Cart.Total,
             AddressId = selectedAddressId,
             CustomerId = customer.CustomerId,
             RestaurantId = firstMenu.RestaurantId,
@@ -201,7 +201,7 @@ else
         };
 
         db.Order.Add(order);
-        await db.SaveChangesAsync(); // gets OrderId
+        await db.SaveChangesAsync();
 
         foreach (var item in Cart.Items)
         {
@@ -214,14 +214,20 @@ else
             });
         }
 
+        db.Payment.Add(new Payment
+        {
+            OrderId = order.OrderId,
+            Amount = order.OrderTotal,
+            PaymentMethod = "Card",
+            PaymentStatus = "Pending",
+            CreatedAt = DateTime.UtcNow
+        });
+
         await db.SaveChangesAsync();
 
         Cart.Clear();
-        success = $"Order placed successfully! Order ID: {order.OrderId}";
 
-        // Optional: redirect after success
-        // Nav.NavigateTo("/restaurants");
-        
-
+        // ✅ Go to payment page
+        Nav.NavigateTo($"/payment/{order.OrderId}");
     }
 }

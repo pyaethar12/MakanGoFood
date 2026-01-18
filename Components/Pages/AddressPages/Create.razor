@@ -1,62 +1,81 @@
 ﻿@page "/addresses/create"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Data
 @using MakanGoFood.Domain
-@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
-@inject NavigationManager NavigationManager
 
-<PageTitle>Create</PageTitle>
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
 
-<h1>Create</h1>
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Customer")]
 
-<h2>Address</h2>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm method="post" Model="Address" OnValidSubmit="AddAddress" FormName="create" Enhance>
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="street" class="form-label">Street:</label> 
-                <InputText id="street" @bind-Value="Address.Street" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Address.Street" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="city" class="form-label">City:</label> 
-                <InputText id="city" @bind-Value="Address.City" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Address.City" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="postalcode" class="form-label">PostalCode:</label> 
-                <InputText id="postalcode" @bind-Value="Address.PostalCode" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Address.PostalCode" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="customerid" class="form-label">CustomerId:</label> 
-                <InputNumber id="customerid" @bind-Value="Address.CustomerId" class="form-control" /> 
-                <ValidationMessage For="() => Address.CustomerId" class="text-danger" /> 
-            </div>        
-            <button type="submit" class="btn btn-primary">Create</button>
-        </EditForm>
+<PageTitle>Create Address</PageTitle>
+
+<h1>Create Address</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMsg))
+{
+    <div class="alert alert-danger">@errorMsg</div>
+}
+
+<EditForm Model="address" OnValidSubmit="CreateAddress">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label class="form-label">Street</label>
+        <InputText class="form-control" @bind-Value="address.Street" />
     </div>
-</div>
 
-<div>
-    <a href="/addresses">Back to List</a>
-</div>
+    <div class="mb-3">
+        <label class="form-label">City</label>
+        <InputText class="form-control" @bind-Value="address.City" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Postal Code</label>
+        <InputText class="form-control" @bind-Value="address.PostalCode" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a class="btn btn-outline-secondary ms-2" href="/addresses">Back</a>
+</EditForm>
 
 @code {
-    [SupplyParameterFromForm]
-    private Address Address { get; set; } = new();
+    private Address address = new();
+    private string? errorMsg;
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task AddAddress()
+    private async Task CreateAddress()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Address.Add(Address);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/addresses");
+        errorMsg = null;
+
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = auth.User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errorMsg = "Not logged in.";
+            return;
+        }
+
+        using var db = DbFactory.CreateDbContext();
+
+        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+        if (customer is null)
+        {
+            errorMsg = "Customer profile not found. Please register/login again.";
+            return;
+        }
+
+        // ✅ Auto-set CustomerId
+        address.CustomerId = customer.CustomerId;
+
+        db.Address.Add(address);
+        await db.SaveChangesAsync();
+
+        Nav.NavigateTo("/addresses");
     }
 }

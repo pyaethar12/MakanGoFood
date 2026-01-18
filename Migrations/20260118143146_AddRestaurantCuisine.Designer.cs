@@ -4,6 +4,7 @@ using MakanGoFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MakanGoFood.Migrations
 {
     [DbContext(typeof(MakanGoFoodContext))]
-    partial class MakanGoFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20260118143146_AddRestaurantCuisine")]
+    partial class AddRestaurantCuisine
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace MakanGoFood.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "65de166d-17ce-4c0f-ae36-477a31a2def8",
+                            ConcurrencyStamp = "77934829-ed97-4752-871d-245e4c520677",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -105,9 +108,9 @@ namespace MakanGoFood.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAELDc56PBb3v/CBewgrF1lA3JeaeWCwo54lszDFbvlQZljfSZEGwNr/j6N2ObgY/xpg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEFeLzIX3KXn7y4XMwWp2w57wpMfHOMyNzMD3VOtrTaTasfnAt2OQkeg1Ljn4P97Bug==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2d6d057e-9b50-4ab9-84ae-9b7f96c2b39f",
+                            SecurityStamp = "1ee18bd8-ddad-4f0e-b4d8-91177832fa3c",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -570,7 +573,7 @@ namespace MakanGoFood.Migrations
                         new
                         {
                             RestaurantId = 4,
-                            Cuisine = "Western",
+                            Cuisine = "Restaurant",
                             ImageUrl = "/images/restaurants/steak-grill.jpg",
                             Location = "Jurong",
                             Name = "Steak & Grill",

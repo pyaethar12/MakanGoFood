@@ -159,9 +159,14 @@ else
         availableOrders = await db.Order
             .Include(o => o.Restaurant)
             .Include(o => o.Address)
-            .Where(o => o.OrderStatus == "Pending" && o.RiderId == null)
+            .Include(o => o.Payment)
+            .Where(o => o.RiderId == null
+                    && o.Payment != null
+                    && o.Payment.PaymentStatus == "Paid"
+                    && o.OrderStatus != STATUS_DELIVERED)
             .OrderByDescending(o => o.OrderDateTime)
             .ToListAsync();
+
 
 
         if (myRiderId.HasValue)
@@ -169,7 +174,8 @@ else
             myOrders = await db.Order
                 .Include(o => o.Restaurant)
                 .Include(o => o.Address)
-                .Where(o => o.RiderId == myRiderId && o.OrderStatus != "Delivered")
+                .Include(o => o.Payment)
+                .Where(o => o.RiderId == myRiderId && o.OrderStatus != STATUS_DELIVERED)
                 .OrderByDescending(o => o.OrderDateTime)
                 .ToListAsync();
         }

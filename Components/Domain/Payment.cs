@@ -6,7 +6,7 @@ namespace MakanGoFood.Domain
     public class Payment
     {
         [Key]
-        public int PaymentId { get; set; }   // PK
+        public int PaymentId { get; set; }
 
         [Required]
         public string PaymentMethod { get; set; } = "Card";
@@ -17,10 +17,14 @@ namespace MakanGoFood.Domain
         [Column(TypeName = "decimal(10,2)")]
         public decimal Amount { get; set; } = 0;
 
+        // ✅ ADD THESE
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? PaidAt { get; set; }
+        public string? TransactionRef { get; set; }
+
         // FK
         public int OrderId { get; set; }
 
-        // Navigation (optional)
         public Order? Order { get; set; }
     }
 }

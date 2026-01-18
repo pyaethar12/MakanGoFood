@@ -2,10 +2,12 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using MakanGoFood.Domain
 @using MakanGoFood.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
+@inject NavigationManager Nav
 
 @attribute [Authorize(Roles = "Customer,Admin")]
 
@@ -13,53 +15,127 @@
 
 <h1>Restaurants</h1>
 
+@if (!string.IsNullOrWhiteSpace(Search) || !string.IsNullOrWhiteSpace(Cuisine))
+{
+    <div class="alert alert-secondary d-flex justify-content-between align-items-center">
+        <div>
+            <b>Filter:</b>
+            @if (!string.IsNullOrWhiteSpace(Cuisine))
+            {
+                <span class="badge bg-primary me-2">Cuisine: @Cuisine</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Search))
+            {
+                <span class="badge bg-dark">Search: @Search</span>
+            }
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="ClearFilters">Clear</button>
+    </div>
+}
+
 <AuthorizeView Roles="Admin">
     <p>
         <a class="btn btn-primary btn-sm" href="restaurants/create">Create New</a>
     </p>
 </AuthorizeView>
 
-<QuickGrid Class="table" Items="context.Restaurant">
-    <PropertyColumn Property="restaurant => restaurant.Name" Title="Name" />
-    <PropertyColumn Property="restaurant => restaurant.Location" Title="Location" />
-    <PropertyColumn Property="restaurant => restaurant.OpeningHours" Title="Opening Hours" />
-    <PropertyColumn Property="restaurant => restaurant.Rating" Title="Rating" />
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <QuickGrid TGridItem="Restaurant" Class="table align-middle" Items="restaurants">
 
-    <TemplateColumn Title="Actions" Context="restaurant">
-        <!-- Customer main action -->
-        <NavLink class="btn btn-sm btn-success"
-                 href="@($"/menus/{restaurant.RestaurantId}")">
-            View Menu
-        </NavLink>
+        <TemplateColumn Title="Image" Context="restaurant">
+            @{
+                var img = "/" + (restaurant.ImageUrl ?? "").TrimStart('/');
+            }
+            <img src="@img"
+                 alt="@restaurant.Name"
+                 style="width:90px; height:70px; object-fit:cover; border-radius:8px;"
+                 onerror="this.style.display='none';" />
+        </TemplateColumn>
 
-        <!-- Admin actions -->
-        <AuthorizeView Roles="Admin">
-            <span class="mx-2">|</span>
-            <a class="btn btn-sm btn-warning"
-               href="@($"restaurants/edit?restaurantid={restaurant.RestaurantId}")">
-                Edit
-            </a>
+        <PropertyColumn Property="r => r.Name" Title="Name" />
+        <PropertyColumn Property="r => r.Cuisine" Title="Cuisine" />
+        <PropertyColumn Property="r => r.Location" Title="Location" />
+        <PropertyColumn Property="r => r.OpeningHours" Title="Opening Hours" />
+        <PropertyColumn Property="r => r.Rating" Title="Rating" />
 
-            <a class="btn btn-sm btn-info ms-1"
-               href="@($"restaurants/details?restaurantid={restaurant.RestaurantId}")">
-                Details
-            </a>
+        <TemplateColumn Title="Actions" Context="restaurant">
+            <NavLink class="btn btn-sm btn-success"
+                     href="@($"/menus/{restaurant.RestaurantId}")">
+                View Menu
+            </NavLink>
 
-            <a class="btn btn-sm btn-danger ms-1"
-               href="@($"restaurants/delete?restaurantid={restaurant.RestaurantId}")">
-                Delete
-            </a>
-        </AuthorizeView>
-    </TemplateColumn>
-</QuickGrid>
+            <AuthorizeView Roles="Admin">
+                <span class="mx-2">|</span>
+
+                <a class="btn btn-sm btn-warning"
+                   href="@($"restaurants/edit?restaurantid={restaurant.RestaurantId}")">
+                    Edit
+                </a>
+
+                <a class="btn btn-sm btn-info ms-1"
+                   href="@($"restaurants/details?restaurantid={restaurant.RestaurantId}")">
+                    Details
+                </a>
+
+                <a class="btn btn-sm btn-danger ms-1"
+                   href="@($"restaurants/delete?restaurantid={restaurant.RestaurantId}")">
+                    Delete
+                </a>
+            </AuthorizeView>
+        </TemplateColumn>
+
+    </QuickGrid>
+}
 
 @code {
     private MakanGoFoodContext context = default!;
+    private IQueryable<Restaurant> restaurants = Enumerable.Empty<Restaurant>().AsQueryable();
+    private bool loading = true;
+
+    // ✅ MUST match query string keys: ?cuisine=Chinese&search=xxx
+    [SupplyParameterFromQuery(Name = "cuisine")] public string? cuisine { get; set; }
+    [SupplyParameterFromQuery(Name = "search")] public string? search { get; set; }
+
+    private string? Cuisine => string.IsNullOrWhiteSpace(cuisine) ? null : cuisine.Trim();
+    private string? Search => string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
     }
+
+    protected override Task OnParametersSetAsync()
+    {
+        loading = true;
+
+        var q = context.Restaurant.AsNoTracking().AsQueryable();
+
+        // ✅ Cuisine filter (case-insensitive)
+        if (!string.IsNullOrWhiteSpace(Cuisine))
+        {
+            var c = Cuisine!.ToLower();
+            q = q.Where(r => r.Cuisine.ToLower() == c);
+        }
+
+        // ✅ Search filter
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var s = Search!.ToLower();
+            q = q.Where(r => r.Name.ToLower().Contains(s) || r.Location.ToLower().Contains(s));
+        }
+
+        restaurants = q.OrderBy(r => r.Name);
+
+        loading = false;
+        return Task.CompletedTask;
+    }
+
+    private void ClearFilters() => Nav.NavigateTo("/restaurants");
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
