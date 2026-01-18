@@ -14,5 +14,8 @@ namespace MakanGoFood.Domain
         public string Phone { get; set; } = "";
 
         public string VehicleNo { get; set; } = "";
+
+        [Required, EmailAddress]
+        public string Email { get; set; } = "";
     }
 }

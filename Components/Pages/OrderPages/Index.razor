@@ -1,43 +1,237 @@
 ﻿@page "/orders"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
-@using MakanGoFood.Domain
 @using MakanGoFood.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
-@attribute [Authorize(Roles = "Rider")]
+@using MakanGoFood.Domain
 
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Index</PageTitle>
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Rider,Admin")]
 
-<h1>Index</h1>
+<h1>Rider Orders</h1>
 
-<p>
-    <a href="orders/create">Create New</a>
-</p>
+@if (!string.IsNullOrWhiteSpace(msg))
+{
+    <div class="alert alert-info">@msg</div>
+}
 
-<QuickGrid Class="table" Items="context.Order">
-    <PropertyColumn Property="order => order.OrderDateTime" />
-    <PropertyColumn Property="order => order.OrderStatus" />
-    <PropertyColumn Property="order => order.AddressId" />
-    <PropertyColumn Property="order => order.CustomerId" />
-    <PropertyColumn Property="order => order.RiderId" />
-    <PropertyColumn Property="order => order.RestaurantId" />
+<h4>Available Orders (Pending)</h4>
+@if (availableOrders.Count == 0)
+{
+    <p>No available orders right now.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>OrderId</th>
+                <th>Restaurant</th>
+                <th>Delivery Address</th>
+                <th>Status</th>
+                <th>Actions</th>
+                <th>Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in availableOrders)
+            {
+                <tr>
+                    <td>@o.OrderId</td>
+                    <td>@o.Restaurant?.Name</td>
+                    <td>
+                        @o.Address?.Street, @o.Address?.City (@o.Address?.PostalCode)
+                    </td>
+                    <td>@o.OrderStatus</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" @onclick="() => AcceptOrder(o.OrderId)">
+                            Accept
+                        </button>
+                    </td>
+                    <td style="min-width:360px;">
+                        <OrderStatusTimeline CurrentStatus="@o.OrderStatus" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
-    <TemplateColumn Context="order">
-        <a href="@($"orders/edit?orderid={order.OrderId}")">Edit</a> |
-        <a href="@($"orders/details?orderid={order.OrderId}")">Details</a> |
-        <a href="@($"orders/delete?orderid={order.OrderId}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+<hr />
+
+<h4>My Assigned Orders</h4>
+@if (myOrders.Count == 0)
+{
+    <p>No assigned orders.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>OrderId</th>
+                <th>Restaurant</th>
+                <th>Delivery Address</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in myOrders)
+            {
+                <tr>
+                    <td>@o.OrderId</td>
+                    <td>@o.Restaurant?.Name</td>
+                    <td>
+                        @o.Address?.Street,
+                        @o.Address?.City
+                        (@o.Address?.PostalCode)
+                    </td>
+                    <td>@o.OrderStatus</td>
+
+                    <td class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="@(() => SetStatus(o.OrderId, STATUS_ON_THE_WAY))"
+                                disabled="@(o.OrderStatus == STATUS_DELIVERED)">
+                            Picked Up
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-success"
+                                @onclick="@(() => SetStatus(o.OrderId, STATUS_DELIVERED))"
+                                disabled="@(o.OrderStatus == STATUS_DELIVERED)">
+                            Delivered
+                        </button>
+                    </td>
+                    <td style="min-width:360px;">
+                        <OrderStatusTimeline CurrentStatus="@o.OrderStatus" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    private MakanGoFoodContext context = default!;
 
-    protected override void OnInitialized()
+    private const string STATUS_ON_THE_WAY = "OnTheWay";
+    private const string STATUS_DELIVERED = "Delivered";
+
+    private List<Order> availableOrders = new();
+    private List<Order> myOrders = new();
+    private string? msg;
+
+    // IMPORTANT:
+    // We need a RiderId from your DeliveryRider table.
+    // Simplest mapping: DeliveryRider.Name or Phone won't match Identity by default.
+    // We'll use this temporary approach:
+    // Rider logs in, we match DeliveryRider.Name == email (not ideal), OR we show only Admin can accept.
+    // Better: add Rider.Email to DeliveryRider table later.
+    private int? myRiderId;
+
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
+        await LoadRiderId();
+        await LoadOrders();
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    private async Task LoadRiderId()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = auth.User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return;
+
+        using var db = DbFactory.CreateDbContext();
+
+        // TEMP mapping (recommended improvement: add Email column to DeliveryRider)
+        var rider = await db.DeliveryRider.FirstOrDefaultAsync(r => r.Email == email);
+        myRiderId = rider?.RiderId;
+    }
+
+    private async Task LoadOrders()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        availableOrders = await db.Order
+            .Include(o => o.Restaurant)
+            .Include(o => o.Address)
+            .Where(o => o.OrderStatus == "Pending" && o.RiderId == null)
+            .OrderByDescending(o => o.OrderDateTime)
+            .ToListAsync();
+
+
+        if (myRiderId.HasValue)
+        {
+            myOrders = await db.Order
+                .Include(o => o.Restaurant)
+                .Include(o => o.Address)
+                .Where(o => o.RiderId == myRiderId && o.OrderStatus != "Delivered")
+                .OrderByDescending(o => o.OrderDateTime)
+                .ToListAsync();
+        }
+        else
+        {
+            myOrders = new();
+        }
+    }
+
+    private async Task AcceptOrder(int orderId)
+    {
+        if (!myRiderId.HasValue)
+        {
+            msg = "Rider profile not found. (Fix by adding Email to DeliveryRider table.)";
+            return;
+        }
+
+        using var db = DbFactory.CreateDbContext();
+
+        var order = await db.Order.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        if (order is null) return;
+
+        if (order.RiderId != null)
+        {
+            msg = "This order was already accepted by another rider.";
+            await LoadOrders();
+            return;
+        }
+
+        order.RiderId = myRiderId.Value;
+        order.OrderStatus = "Accepted";
+
+        await db.SaveChangesAsync();
+
+        msg = $"Accepted Order #{orderId}";
+        await LoadOrders();
+    }
+
+    private async Task SetStatus(int orderId, string status)
+    {
+        if (!myRiderId.HasValue)
+        {
+            msg = "Rider profile not found.";
+            return;
+        }
+
+        using var db = DbFactory.CreateDbContext();
+
+        var order = await db.Order.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        if (order is null) return;
+
+        // Ensure only the assigned rider can update
+        if (order.RiderId != myRiderId.Value)
+        {
+            msg = "You are not assigned to this order.";
+            return;
+        }
+
+        order.OrderStatus = status;
+        await db.SaveChangesAsync();
+
+        msg = $"Order #{orderId} updated to {status}";
+        await LoadOrders();
+    }
 }

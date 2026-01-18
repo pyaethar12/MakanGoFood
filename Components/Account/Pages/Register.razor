@@ -6,6 +6,8 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MakanGoFood.Data
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Domain
 
 @inject UserManager<MakanGoFoodUser> UserManager
 @inject IUserStore<MakanGoFoodUser> UserStore
@@ -15,6 +17,8 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject RoleManager<IdentityRole> RoleManager
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+
 
 <PageTitle>Register</PageTitle>
 
@@ -80,7 +84,6 @@
         <section>
             <h3>Use another service to register.</h3>
             <hr />
-            <ExternalLoginPicker />
         </section>
     </div>
 </div>
@@ -98,6 +101,8 @@
 
     public async Task RegisterUser(EditContext editContext)
     {
+        identityErrors = null;
+
         var user = CreateUser();
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -115,7 +120,7 @@
             return;
         }
 
-        // NEW: Ensure roles exist
+        // Ensure roles exist
         string[] roles = { "Customer", "Rider", "Admin" };
         foreach (var r in roles)
         {
@@ -125,52 +130,75 @@
             }
         }
 
-        // NEW: Add user to selected role
+        // Add user to selected role
         await UserManager.AddToRoleAsync(user, Input.Role);
+        if (Input.Role == "Rider")
+        {
+            using var db = DbFactory.CreateDbContext();
 
-        // Keep your claim
+            // Create rider profile ONLY if it doesn't exist yet
+            var exists = await db.DeliveryRider.AnyAsync(r => r.Email == Input.Email);
+            if (!exists)
+            {
+                db.DeliveryRider.Add(new DeliveryRider
+                {
+                    Name = $"{Input.FirstName} {Input.LastName}",
+                    Email = Input.Email,
+                    Phone = "",        // can be updated later
+                    VehicleNo = ""
+                });
+
+                await db.SaveChangesAsync();
+            }
+        }
+
+
+        // Add claim (optional)
         await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("userId", user.Id));
+
+        // ✅ AUTO-CREATE profile in your domain tables
+        using (var db = DbFactory.CreateDbContext())
+        {
+            if (Input.Role == "Customer")
+            {
+                var customerExists = await db.Customer.AnyAsync(c => c.Email == Input.Email);
+                if (!customerExists)
+                {
+                    db.Customer.Add(new Customer
+                    {
+                        Name = $"{Input.FirstName} {Input.LastName}",
+                        Email = Input.Email,
+                        Phone = ""
+                    });
+                    await db.SaveChangesAsync();
+                }
+            }
+            else if (Input.Role == "Rider")
+            {
+                var riderExists = await db.DeliveryRider.AnyAsync(r => r.Email == Input.Email);
+                if (!riderExists)
+                {
+                    db.DeliveryRider.Add(new DeliveryRider
+                    {
+                        Name = $"{Input.FirstName} {Input.LastName}",
+                        Email = Input.Email,
+                        Phone = "00000000",   // Required: cannot be empty
+                        VehicleNo = ""
+                    });
+                    await db.SaveChangesAsync();
+                }
+            }
+        }
 
         Logger.LogInformation("User created a new account with password.");
 
-        // Email confirmation logic (will be skipped if RequireConfirmedAccount=false)
-        var userId = await UserManager.GetUserIdAsync(user);
-        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
-
-        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
-
-        if (UserManager.Options.SignIn.RequireConfirmedAccount)
-        {
-            RedirectManager.RedirectTo(
-                "Account/RegisterConfirmation",
-                new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
-            return;
-        }
-
+        // ✅ You said: Register -> go to Login page
         RedirectManager.RedirectTo(
             "Account/Login",
-            new Dictionary<string, object?> { ["returnUrl"] = ReturnUrl });
-        
-
-        // NEW: Redirect by role if no ReturnUrl
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
-        {
-            RedirectManager.RedirectTo(ReturnUrl);
-        }
-        else
-        {
-            if (Input.Role == "Customer")
-                RedirectManager.RedirectTo("/food");      // change if your customer home is different
-            else if (Input.Role == "Rider")
-                RedirectManager.RedirectTo("/rider");     // change to your rider dashboard route
-            else
-                RedirectManager.RedirectTo("/");
-        }
+            new Dictionary<string, object?> { ["returnUrl"] = ReturnUrl }
+        );
     }
+
 
     private MakanGoFoodUser CreateUser()
     {

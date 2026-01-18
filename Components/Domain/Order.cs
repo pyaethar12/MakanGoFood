@@ -23,5 +23,7 @@ namespace MakanGoFood.Domain
         public Customer? Customer { get; set; }
         public DeliveryRider? Rider { get; set; }
         public Restaurant? Restaurant { get; set; }
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
     }
 }

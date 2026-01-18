@@ -1,35 +1,42 @@
 ﻿@page "/deliveryriders/details"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using MakanGoFood.Domain
+
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Details</PageTitle>
+@attribute [Authorize(Roles = "Admin")]
 
-<h1>Details</h1>
+<PageTitle>Rider Details</PageTitle>
 
-<div>
-    <h2>DeliveryRider</h2>
-    <hr />
-    @if (deliveryrider is null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else {
-        <dl class="row">
-            <dt class="col-sm-2">Name</dt>
-            <dd class="col-sm-10">@deliveryrider.Name</dd>
-            <dt class="col-sm-2">Phone</dt>
-            <dd class="col-sm-10">@deliveryrider.Phone</dd>
-            <dt class="col-sm-2">VehicleNo</dt>
-            <dd class="col-sm-10">@deliveryrider.VehicleNo</dd>
-        </dl>
-        <div>
-            <a href="@($"/deliveryriders/edit?riderid={deliveryrider.RiderId}")">Edit</a> |
-            <a href="@($"/deliveryriders")">Back to List</a>
-        </div>
-    }
-</div>
+<h1>Rider Details</h1>
+
+@if (deliveryrider is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <dl class="row">
+        <dt class="col-sm-2">Name</dt>
+        <dd class="col-sm-10">@deliveryrider.Name</dd>
+
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@deliveryrider.Email</dd>
+
+        <dt class="col-sm-2">Phone</dt>
+        <dd class="col-sm-10">@deliveryrider.Phone</dd>
+
+        <dt class="col-sm-2">Vehicle No</dt>
+        <dd class="col-sm-10">@deliveryrider.VehicleNo</dd>
+    </dl>
+
+    <a class="btn btn-primary" href="@($"/deliveryriders/edit?riderid={deliveryrider.RiderId}")">Edit</a>
+    <a class="btn btn-secondary ms-2" href="/deliveryriders">Back</a>
+}
 
 @code {
     private DeliveryRider? deliveryrider;
@@ -39,12 +46,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        deliveryrider = await context.DeliveryRider.FirstOrDefaultAsync(m => m.RiderId == RiderId);
+        using var db = DbFactory.CreateDbContext();
+        deliveryrider = await db.DeliveryRider.FirstOrDefaultAsync(r => r.RiderId == RiderId);
 
         if (deliveryrider is null)
-        {
             NavigationManager.NavigateTo("notfound");
-        }
     }
 }

@@ -4,6 +4,7 @@ using MakanGoFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MakanGoFood.Migrations
 {
     [DbContext(typeof(MakanGoFoodContext))]
-    partial class MakanGoFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20260117120213_AddDeliveryRiderEmail")]
+    partial class AddDeliveryRiderEmail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,7 +100,7 @@ namespace MakanGoFood.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "ef1cd15f-28ae-4eb3-b78c-88bd323fb6e1",
+                            ConcurrencyStamp = "ee42ac30-197d-41ba-8411-f58136e18db9",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -105,9 +108,9 @@ namespace MakanGoFood.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEB1Lfrym/cb+ozauzUGF7yaAEah3IqrXD7SE5n6fBxJe8Z6he6kQtvnqnSVAiKWWIg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEA2FodMbcH751ajlXQiZC4/B22+vpMRVRltrn7JeVFDVCA9Z4/bcQmXvgwyPxveTxQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "51d41e90-6174-4c49-a67c-0b89616b7bbc",
+                            SecurityStamp = "17e6d876-a4f1-4701-9ac3-d857c23df5fc",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });

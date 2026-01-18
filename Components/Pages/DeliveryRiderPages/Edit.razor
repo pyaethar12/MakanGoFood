@@ -4,12 +4,11 @@
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Edit Rider</PageTitle>
 
-<h1>Edit</h1>
-
-<h2>DeliveryRider</h2>
+<h1>Edit Delivery Rider</h1>
 <hr />
+
 @if (DeliveryRider is null)
 {
     <p><em>Loading...</em></p>
@@ -18,84 +17,67 @@ else
 {
     <div class="row">
         <div class="col-md-4">
-            <EditForm method="post" Model="DeliveryRider" OnValidSubmit="UpdateDeliveryRider" FormName="edit" Enhance>
+            <EditForm Model="@DeliveryRider" OnValidSubmit="UpdateDeliveryRider">
                 <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="DeliveryRider.RiderId" value="@DeliveryRider.RiderId" />
+                <ValidationSummary class="text-danger" role="alert" />
+
                 <div class="mb-3">
-                <span class="text-danger">*</span>
-                    <label for="name" class="form-label">Name:</label>
-                    <InputText id="name" @bind-Value="DeliveryRider.Name" class="form-control" aria-required="true"/>
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" @bind-Value="DeliveryRider.Name" />
                     <ValidationMessage For="() => DeliveryRider.Name" class="text-danger" />
                 </div>
+
                 <div class="mb-3">
-                <span class="text-danger">*</span>
-                    <label for="phone" class="form-label">Phone:</label>
-                    <InputText id="phone" @bind-Value="DeliveryRider.Phone" class="form-control" aria-required="true"/>
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value="DeliveryRider.Email" />
+                    <ValidationMessage For="() => DeliveryRider.Email" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <InputText class="form-control" @bind-Value="DeliveryRider.Phone" />
                     <ValidationMessage For="() => DeliveryRider.Phone" class="text-danger" />
                 </div>
+
                 <div class="mb-3">
-                    <label for="vehicleno" class="form-label">VehicleNo:</label>
-                    <InputText id="vehicleno" @bind-Value="DeliveryRider.VehicleNo" class="form-control" />
+                    <label class="form-label">Vehicle No</label>
+                    <InputText class="form-control" @bind-Value="DeliveryRider.VehicleNo" />
                     <ValidationMessage For="() => DeliveryRider.VehicleNo" class="text-danger" />
                 </div>
+
                 <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-link" href="/deliveryriders">Back to List</a>
             </EditForm>
         </div>
     </div>
 }
 
-<div>
-    <a href="/deliveryriders">Back to List</a>
-</div>
-
 @code {
-    [SupplyParameterFromQuery]
-    private int RiderId { get; set; }
+    [SupplyParameterFromQuery(Name = "riderid")]
+    public int RiderId { get; set; }
 
-    [SupplyParameterFromForm]
-    private DeliveryRider? DeliveryRider { get; set; }
+    private DeliveryRider? DeliveryRider;
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        DeliveryRider ??= await context.DeliveryRider.FirstOrDefaultAsync(m => m.RiderId == RiderId);
+        using var db = DbFactory.CreateDbContext();
+
+        DeliveryRider = await db.DeliveryRider
+            .FirstOrDefaultAsync(r => r.RiderId == RiderId);
 
         if (DeliveryRider is null)
         {
-            NavigationManager.NavigateTo("notfound");
+            NavigationManager.NavigateTo("/deliveryriders");
         }
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task UpdateDeliveryRider()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Attach(DeliveryRider!).State = EntityState.Modified;
+        using var db = DbFactory.CreateDbContext();
 
-        try
-        {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!DeliveryRiderExists(DeliveryRider!.RiderId))
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-            else
-            {
-                throw;
-            }
-        }
+        db.DeliveryRider.Update(DeliveryRider!);
+        await db.SaveChangesAsync();
 
         NavigationManager.NavigateTo("/deliveryriders");
-    }
-
-    private bool DeliveryRiderExists(int riderid)
-    {
-        using var context = DbFactory.CreateDbContext();
-        return context.DeliveryRider.Any(e => e.RiderId == riderid);
     }
 }

@@ -1,0 +1,92 @@
+﻿@page "/myorders"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Data
+@using MakanGoFood.Domain
+
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Customer")]
+
+<h1>My Orders</h1>
+
+<p><b>Logged in:</b> @emailDebug</p>
+<p><b>CustomerId:</b> @customerIdDebug</p>
+<p><b>Orders found:</b> @orders.Count</p>
+
+@if (orders.Count == 0)
+{
+    <p>No orders yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>OrderId</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>RestaurantName</th>
+                <th>AddressName</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in orders)
+            {
+                <tr>
+                    <td>@o.OrderId</td>
+                    <td>@o.OrderDateTime</td>
+                    <td>@o.OrderStatus</td>
+                    <td>@o.Restaurant?.Name</td>
+                    <td>@($"{o.Address?.Street}, {o.Address?.City} {o.Address?.PostalCode}")</td>
+                    <td>
+                        <NavLink class="btn btn-sm btn-primary" href="@($"/myorders/{o.OrderId}")">
+                            View
+                        </NavLink>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Order> orders = new();
+    private string emailDebug = "(none)";
+    private string customerIdDebug = "(none)";
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = auth.User.Identity?.Name;
+
+        emailDebug = email ?? "(null)";
+
+        if (string.IsNullOrWhiteSpace(email))
+            return;
+
+        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+
+        if (customer is null)
+        {
+            customerIdDebug = "(null - no customer row)";
+            return;
+        }
+
+        customerIdDebug = customer.CustomerId.ToString();
+
+        orders = await db.Order
+            .Include(o => o.Restaurant)
+            .Include(o => o.Address)
+            .Where(o => o.CustomerId == customer.CustomerId)
+            .OrderByDescending(o => o.OrderDateTime)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+}

@@ -60,8 +60,16 @@
     private async Task DeleteAddress()
     {
         using var context = DbFactory.CreateDbContext();
-        context.Address.Remove(address!);
-        await context.SaveChangesAsync();
+
+        // Re-fetch the address in this context OR attach the existing one
+        var addressToDelete = await context.Address.FindAsync(address!.AddressId);
+
+        if (addressToDelete != null)
+        {
+            context.Address.Remove(addressToDelete);
+            await context.SaveChangesAsync();
+        }
+
         NavigationManager.NavigateTo("/addresses");
     }
 }

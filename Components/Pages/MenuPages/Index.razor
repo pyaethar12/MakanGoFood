@@ -1,40 +1,81 @@
-﻿@page "/menus"
+﻿@page "/menus/{RestaurantId:int}"
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Authorization
 @using MakanGoFood.Domain
 @using MakanGoFood.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
-@attribute [Authorize(Roles = "Customer")]
+@using MakanGoFood.Services
+@inject CartService Cart
+@rendermode InteractiveServer
 
 
-<PageTitle>Index</PageTitle>
+@attribute [Authorize(Roles = "Customer,Admin")]
 
-<h1>Index</h1>
+<PageTitle>Menu</PageTitle>
 
-<p>
-    <a href="menus/create">Create New</a>
-</p>
+<h1>Menu</h1>
 
-<QuickGrid Class="table" Items="context.Menu">
-    <PropertyColumn Property="menu => menu.Name" />
-    <PropertyColumn Property="menu => menu.Price" />
-    <PropertyColumn Property="menu => menu.RestaurantId" />
+<AuthorizeView Roles="Admin">
+    <p>
+        <a class="btn btn-primary btn-sm" href="menus/create">Create New</a>
+    </p>
+</AuthorizeView>
 
-    <TemplateColumn Context="menu">
-        <a href="@($"menus/edit?menuid={menu.MenuId}")">Edit</a> |
-        <a href="@($"menus/details?menuid={menu.MenuId}")">Details</a> |
-        <a href="@($"menus/delete?menuid={menu.MenuId}")">Delete</a>
+<QuickGrid Class="table" Items="menus">
+    <PropertyColumn Property="m => m.Name" Title="Item" />
+    <PropertyColumn Property="m => m.Price" Title="Price" />
+
+    <TemplateColumn Title="Actions" Context="m">
+        <!-- Customer action -->
+        <button class="btn btn-sm btn-success" @onclick="() => AddToCart(m)">
+            Add to Order
+        </button>
+
+        <!-- Admin actions -->
+        <AuthorizeView Roles="Admin">
+            <span class="mx-2">|</span>
+            <a class="btn btn-sm btn-warning" href="@($"menus/edit?menuid={m.MenuId}")">Edit</a>
+            <a class="btn btn-sm btn-info ms-1" href="@($"menus/details?menuid={m.MenuId}")">Details</a>
+            <a class="btn btn-sm btn-danger ms-1" href="@($"menus/delete?menuid={m.MenuId}")">Delete</a>
+        </AuthorizeView>
     </TemplateColumn>
 </QuickGrid>
 
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-success mt-3">@message</div>
+}
+
+<NavLink class="btn btn-primary ms-2" href="/orderitems">
+    Go to Order
+</NavLink>
+
+
+
 @code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
     private MakanGoFoodContext context = default!;
+    private IQueryable<Menu> menus = Enumerable.Empty<Menu>().AsQueryable();
+    private string? message;
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
+
+        // ✅ Filter menus by selected restaurant
+        menus = context.Menu.Where(m => m.RestaurantId == RestaurantId);
     }
+
+    private void AddToCart(Menu m)
+    {
+        Cart.Add(m.MenuId, m.Name, m.Price);
+        message = $"{m.Name} added to order.";
+    }
+
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

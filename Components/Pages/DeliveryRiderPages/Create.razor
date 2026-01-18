@@ -1,56 +1,67 @@
 ﻿@page "/deliveryriders/create"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using MakanGoFood.Domain
+
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create</PageTitle>
+@attribute [Authorize(Roles = "Admin")]
 
-<h1>Create</h1>
+<PageTitle>Create Rider</PageTitle>
 
-<h2>DeliveryRider</h2>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm method="post" Model="DeliveryRider" OnValidSubmit="AddDeliveryRider" FormName="create" Enhance>
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="name" class="form-label">Name:</label> 
-                <InputText id="name" @bind-Value="DeliveryRider.Name" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => DeliveryRider.Name" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="phone" class="form-label">Phone:</label> 
-                <InputText id="phone" @bind-Value="DeliveryRider.Phone" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => DeliveryRider.Phone" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="vehicleno" class="form-label">VehicleNo:</label> 
-                <InputText id="vehicleno" @bind-Value="DeliveryRider.VehicleNo" class="form-control" /> 
-                <ValidationMessage For="() => DeliveryRider.VehicleNo" class="text-danger" /> 
-            </div>        
-            <button type="submit" class="btn btn-primary">Create</button>
-        </EditForm>
+<h1>Create Rider</h1>
+
+@if (!string.IsNullOrWhiteSpace(msg))
+{
+    <div class="alert alert-info">@msg</div>
+}
+
+<EditForm Model="DeliveryRider" OnValidSubmit="AddDeliveryRider">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <InputText class="form-control" @bind-Value="DeliveryRider.Name" />
+        <ValidationMessage For="() => DeliveryRider.Name" class="text-danger" />
     </div>
-</div>
 
-<div>
-    <a href="/deliveryriders">Back to List</a>
-</div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText class="form-control" @bind-Value="DeliveryRider.Email" />
+        <ValidationMessage For="() => DeliveryRider.Email" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <InputText class="form-control" @bind-Value="DeliveryRider.Phone" />
+        <ValidationMessage For="() => DeliveryRider.Phone" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Vehicle No</label>
+        <InputText class="form-control" @bind-Value="DeliveryRider.VehicleNo" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a class="btn btn-secondary ms-2" href="/deliveryriders">Back</a>
+</EditForm>
 
 @code {
-    [SupplyParameterFromForm]
     private DeliveryRider DeliveryRider { get; set; } = new();
+    private string? msg;
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddDeliveryRider()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.DeliveryRider.Add(DeliveryRider);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/deliveryriders");
+        using var db = DbFactory.CreateDbContext();
+
+        db.DeliveryRider.Add(DeliveryRider);
+        await db.SaveChangesAsync();
+
+        msg = "Rider created!";
+        NavigationManager.NavigateTo("/deliveryriders", forceLoad: true);
     }
 }

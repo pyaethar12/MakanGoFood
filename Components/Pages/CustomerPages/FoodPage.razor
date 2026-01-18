@@ -1,0 +1,261 @@
+﻿@page "/food"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Customer")]
+
+@using Microsoft.EntityFrameworkCore
+@using MakanGoFood.Data
+@using MakanGoFood.Domain
+@using MakanGoFood.Services
+@using Microsoft.AspNetCore.Identity
+
+@inject IDbContextFactory<MakanGoFoodContext> DbFactory
+@inject CartService Cart
+@inject UserManager<MakanGoFoodUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<h3>Food</h3>
+
+<div class="row">
+    <div class="col-7">
+        <h5>Restaurants</h5>
+        <select class="form-select" @onchange="OnRestaurantChanged">
+            <option value="0">-- Select Restaurant --</option>
+            @foreach (var r in restaurants)
+            {
+                <option value="@r.RestaurantId">@r.Name</option>
+            }
+        </select>
+
+        @if (selectedRestaurantId > 0)
+        {
+            <h5 class="mt-3">Menu</h5>
+            @if (menus.Count == 0)
+            {
+                <p>No menu items yet.</p>
+            }
+            else
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Price</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in menus)
+                        {
+                            <tr>
+                                <td>@m.Name</td>
+                                <td>@m.Price.ToString("0.00")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => AddToCart(m)">
+                                        Add
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+
+    <div class="col-5">
+        <h5>Cart</h5>
+
+        @if (Cart.Items.Count == 0)
+        {
+            <p>Your cart is empty.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th style="width:140px;">Qty</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Cart.Items)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => Cart.Decrease(item.MenuId)">-</button>
+                                <span class="mx-2">@item.Quantity</span>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => Cart.Increase(item.MenuId)">+</button>
+                            </td>
+                            <td>@(item.Price* item.Quantity).ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <p><b>Total: @Cart.Total.ToString("0.00")</b></p>
+
+            <h6>Select Address</h6>
+            <select class="form-select" @bind="selectedAddressId">
+                <option value="0">-- Select Address --</option>
+                @foreach (var a in addresses)
+                {
+                    <option value="@a.AddressId">@a.Street, @a.City (@a.PostalCode)</option>
+                }
+            </select>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <div class="alert alert-danger mt-2">@error</div>
+            }
+
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-success" @onclick="PlaceOrder">Place Order</button>
+                <button class="btn btn-outline-danger" @onclick="Cart.Clear">Clear</button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Restaurant> restaurants = new();
+    private List<Menu> menus = new();
+    private List<Address> addresses = new();
+
+    private int selectedRestaurantId = 0;
+    private int selectedAddressId = 0;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRestaurants();
+        await LoadCustomerAddresses();
+    }
+
+    private async Task LoadRestaurants()
+    {
+        using var db = DbFactory.CreateDbContext();
+        restaurants = await db.Restaurant.AsNoTracking().OrderBy(r => r.Name).ToListAsync();
+    }
+
+    private async Task LoadMenus()
+    {
+        using var db = DbFactory.CreateDbContext();
+        menus = await db.Menu.AsNoTracking()
+            .Where(m => m.RestaurantId == selectedRestaurantId)
+            .OrderBy(m => m.Name)
+            .ToListAsync();
+    }
+
+    private async Task LoadCustomerAddresses()
+    {
+        // IMPORTANT: This is a simplified mapping:
+        // We assume Customer.Email == Identity Email
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = authState.User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return;
+
+        using var db = DbFactory.CreateDbContext();
+        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+
+        if (customer is null)
+        {
+            // If you don't have Customer rows created automatically, you can create one here.
+            // For now we just show no addresses.
+            addresses = new();
+            return;
+        }
+
+        addresses = await db.Address.AsNoTracking()
+            .Where(a => a.CustomerId == customer.CustomerId)
+            .ToListAsync();
+    }
+
+    private async Task OnRestaurantChanged(ChangeEventArgs e)
+    {
+        selectedRestaurantId = int.TryParse(e.Value?.ToString(), out var id) ? id : 0;
+        await LoadMenus();
+    }
+
+    private void AddToCart(Menu m)
+    {
+        Cart.Add(m.MenuId, m.Name, m.Price);
+        error = null;
+    }
+
+    private async Task PlaceOrder()
+    {
+        error = null;
+
+        if (selectedRestaurantId <= 0)
+        {
+            error = "Please select a restaurant first.";
+            return;
+        }
+
+        if (Cart.Items.Count == 0)
+        {
+            error = "Your cart is empty.";
+            return;
+        }
+
+        if (selectedAddressId <= 0)
+        {
+            error = "Please select an address.";
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = authState.User.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            error = "Not logged in.";
+            return;
+        }
+
+        using var db = DbFactory.CreateDbContext();
+
+        var customer = await db.Customer.FirstOrDefaultAsync(c => c.Email == email);
+        if (customer is null)
+        {
+            error = "Customer record not found. (You need a Customer row for this user.)";
+            return;
+        }
+
+        var order = new Order
+        {
+            OrderDateTime = DateTime.Now,
+            OrderStatus = "Pending",
+            AddressId = selectedAddressId,
+            CustomerId = customer.CustomerId,
+            RestaurantId = selectedRestaurantId,
+            RiderId = null
+        };
+
+        db.Order.Add(order);
+        await db.SaveChangesAsync(); // gets OrderId
+
+        foreach (var item in Cart.Items)
+        {
+            var subtotal = item.Price * item.Quantity;
+
+            db.OrderItem.Add(new OrderItem
+            {
+                OrderId = order.OrderId,
+                MenuId = item.MenuId,
+                Quantity = item.Quantity,
+                Subtotal = subtotal
+            });
+        }
+
+        await db.SaveChangesAsync();
+
+        Cart.Clear();
+        Nav.NavigateTo("/customers"); // customer landing page / orders page
+    }
+}

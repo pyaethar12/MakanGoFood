@@ -1,0 +1,36 @@
+﻿@using System
+
+<div class="status-timeline">
+    @for (int i = 0; i < Steps.Length; i++)
+    {
+        var step = Steps[i];
+        var state = GetState(step);
+
+        <div class="status-step @state">
+            <div class="dot"></div>
+            <div class="label">@step</div>
+            @if (i < Steps.Length - 1)
+            {
+                <div class="line"></div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? CurrentStatus { get; set; }
+
+    private readonly string[] Steps = new[] { "Pending", "Accepted", "OnTheWay", "Delivered" };
+
+    private int CurrentIndex =>
+        Array.FindIndex(Steps, s => string.Equals(s, CurrentStatus, StringComparison.OrdinalIgnoreCase));
+
+    private string GetState(string step)
+    {
+        var i = Array.IndexOf(Steps, step);
+        if (CurrentIndex < 0) return "";
+        if (i < CurrentIndex) return "done";
+        if (i == CurrentIndex) return "active";
+        return "todo";
+    }
+}

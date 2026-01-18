@@ -1,37 +1,55 @@
 ﻿@page "/restaurants"
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Authorization
 @using MakanGoFood.Domain
 @using MakanGoFood.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<MakanGoFood.Data.MakanGoFoodContext> DbFactory
-@using Microsoft.AspNetCore.Authorization
+
 @attribute [Authorize(Roles = "Customer,Admin")]
 
+<PageTitle>Restaurants</PageTitle>
 
-<PageTitle>Index</PageTitle>
+<h1>Restaurants</h1>
 
-<h1>Index</h1>
 <AuthorizeView Roles="Admin">
-<p>
-    <a href="restaurants/create">Create New</a>
-</p>
+    <p>
+        <a class="btn btn-primary btn-sm" href="restaurants/create">Create New</a>
+    </p>
 </AuthorizeView>
 
 <QuickGrid Class="table" Items="context.Restaurant">
-    <PropertyColumn Property="restaurant => restaurant.Name" />
-    <PropertyColumn Property="restaurant => restaurant.Location" />
-    <PropertyColumn Property="restaurant => restaurant.OpeningHours" />
-    <PropertyColumn Property="restaurant => restaurant.Rating" />
+    <PropertyColumn Property="restaurant => restaurant.Name" Title="Name" />
+    <PropertyColumn Property="restaurant => restaurant.Location" Title="Location" />
+    <PropertyColumn Property="restaurant => restaurant.OpeningHours" Title="Opening Hours" />
+    <PropertyColumn Property="restaurant => restaurant.Rating" Title="Rating" />
 
-    <TemplateColumn Context="restaurant">
-        <a href="@($"restaurants/edit?restaurantid={restaurant.RestaurantId}")">Edit</a> |
-        <a href="@($"restaurants/details?restaurantid={restaurant.RestaurantId}")">Details</a> 
+    <TemplateColumn Title="Actions" Context="restaurant">
+        <!-- Customer main action -->
+        <NavLink class="btn btn-sm btn-success"
+                 href="@($"/menus/{restaurant.RestaurantId}")">
+            View Menu
+        </NavLink>
 
-        <AuthorizeView Roles ="Administrator">
-            | <a href="@($"restaurants/delete?restaurantid={restaurant.RestaurantId}")">Delete</a>
+        <!-- Admin actions -->
+        <AuthorizeView Roles="Admin">
+            <span class="mx-2">|</span>
+            <a class="btn btn-sm btn-warning"
+               href="@($"restaurants/edit?restaurantid={restaurant.RestaurantId}")">
+                Edit
+            </a>
+
+            <a class="btn btn-sm btn-info ms-1"
+               href="@($"restaurants/details?restaurantid={restaurant.RestaurantId}")">
+                Details
+            </a>
+
+            <a class="btn btn-sm btn-danger ms-1"
+               href="@($"restaurants/delete?restaurantid={restaurant.RestaurantId}")">
+                Delete
+            </a>
         </AuthorizeView>
-
     </TemplateColumn>
 </QuickGrid>
 

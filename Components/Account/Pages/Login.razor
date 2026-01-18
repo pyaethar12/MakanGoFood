@@ -61,7 +61,6 @@
         <section>
             <h3>Use another service to log in.</h3>
             <hr />
-            <ExternalLoginPicker />
         </section>
     </div>
 </div>
@@ -107,11 +106,11 @@
             string destination = "/";
 
             if (await UserManager.IsInRoleAsync(user, "Admin"))
-                destination = "/food";
+                destination = "/customers";
             else if (await UserManager.IsInRoleAsync(user, "Rider"))
                 destination = "/deliveryriders";
             else if (await UserManager.IsInRoleAsync(user, "Customer"))
-                destination = "/customers";
+                destination = "/restaurants";
 
             // IMPORTANT: if ReturnUrl exists but is not this role's destination, ignore it
             if (!string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl.StartsWith(destination, StringComparison.OrdinalIgnoreCase))

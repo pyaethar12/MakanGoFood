@@ -19,5 +19,8 @@ namespace MakanGoFood.Domain
 
         // Navigation (optional but good)
         public Restaurant? Restaurant { get; set; }
+
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
     }
 }

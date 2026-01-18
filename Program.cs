@@ -6,6 +6,7 @@ using MakanGoFood.Components.Account;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextFactory<MakanGoFoodContext>(options =>
@@ -19,8 +20,13 @@ builder.Services.AddRazorComponents()
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<MakanGoFood.Services.CartService>();
 builder.Services.AddScoped<AuthenticationStateProvider,
 IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
